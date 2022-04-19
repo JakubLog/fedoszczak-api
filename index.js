@@ -60,7 +60,7 @@ app.get('/api/v1/blog/posts/:id', (req, res) => {
 // Create new post
 app.post('/api/v1/blog/posts', async (req, res) => {
     const data = await req.body;
-    if(!data?.title || !data?.description || !data?.category || !data?.friendly) {
+    if(!data.title || !data.description || !data.category || !data.friendly) {
         res.status(400).json({
             message: 'Please provide all required fields',
             required: ['title', 'description', 'category', 'friendly'],
@@ -102,5 +102,5 @@ app.post('*', (req, res) => {
 
 // Listen on port 3000
 app.listen(PORT, () => {
-  console.log(`Example app listening on port ${PORT}!`);
+  console.log(`API is now listening on port ${PORT}!`);
 });
