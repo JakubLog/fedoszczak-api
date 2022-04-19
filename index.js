@@ -1,19 +1,13 @@
 const express = require('express');
-const mongoose = require('mongoose');
-const Post = require('./schemas/Post');
 const bodyParser = require('body-parser');
-
-const PORT = 3000;
-
-const dbUrl = 'mongodb+srv://dbUser:OoNSMgEwyrzj7aSw@cluster0.r3lus.mongodb.net/blog?retryWrites=true&w=majority';
-mongoose.connect(dbUrl, {
-    useNewUrlParser: true
-}, (error) => {
-    if(!error)
-        console.log('Connected to database');
-    else
-        console.error('Error connecting to database: ', error);
+const Airtable = require('airtable');
+Airtable.configure({
+    endpointUrl: 'https://api.airtable.com',
+    apiKey: 'key7pJTgcAbXkgfht'
 });
+const base = Airtable.base('app4AttrWnY2xBs1I');
+
+const PORT = 5000;
 
 const app = express();
 app.use(bodyParser.json());
@@ -40,11 +34,20 @@ app.get('/api/v1/blog', (req, res) => {
 
 // Get all posts
 app.get('/api/v1/blog/posts', async (req, res) => {
-    const posts = await Post.find({});
-    res.status(200).json({
-        message: 'Good job, you have found all posts!',
-        data: posts,
-        counter: posts.length
+    base('Table 1').select({
+        view: 'Grid view'
+    }).firstPage((err, records) => {
+        if (err) {
+            res.status(500).json({
+                message: 'Something went wrong'
+            });
+        }
+        const posts = records.map((record) => record.fields);
+        res.status(200).json({
+            message: 'Good job, you have found all posts!',
+            data: posts,
+            counter: posts.length
+        });
     });
 });
 
@@ -52,13 +55,22 @@ app.get('/api/v1/blog/posts', async (req, res) => {
 app.get('/api/v1/blog/posts/:id', async (req, res) => {
     const postId = req.params.id;
     if(postId) {
-        const post = await Post.find({
-            friendly: postId
-        })
-        res.status(200).json({
-            message: 'Good job, you have found one post!',
-            searched_by: postId,
-            data: post
+        await base('Table 1').select({
+            view: 'Grid view',
+            filterByFormula: `{Friendly-url} = '${postId}'`
+        }).firstPage((err, records) => {
+            if (err) {
+                res.status(500).json({
+                    message: 'Something went wrong'
+                });
+            }
+            const posts = records.map((record) => record.fields);
+            const post = Object.fromEntries(Object.entries(posts[0]).map(([key, value]) => [key.toLowerCase(), value]));
+            res.status(200).json({
+                message: 'Good job, you have found one post!',
+                searched_by: postId,
+                data: post
+            });
         });
     } else {
         res.status(404).json({
@@ -77,20 +89,30 @@ app.post('/api/v1/blog/posts', async (req, res) => {
             optional: ['date']
         });
     } else {
-        const { title, description, category, date, friendly, content } = data;
-        const post = new Post({
-            title,
-            description,
-            category,
-            date,
-            friendly,
-            content
-        });
+        const { title, description, category, friendly, content } = data;
+        if(!["Programowanie", "Rozwojowe", "Bezpieczeństwo w sieci"].includes(category)) {
+            res.status(400).json({
+                message: 'There\'s no such category!',
+                available: ["Programowanie", "Rozwojowe", "Bezpieczeństwo w sieci"]
+            });
+            return;
+        }
         try {
-            const createdPost = await post.save();
+            await base('Table 1').create(
+                {
+                        "Title": title,
+                        "Category": category,
+                        "Friendly-url": friendly,
+                        "Description": description,
+                        "Content": content
+                }
+                , (err) => {
+                    if (err) {
+                        console.error(err);
+                    }
+                });
             res.status(201).json({
-                message: 'Post created successfully',
-                data: createdPost
+                message: 'Post created successfully'
             });
         } catch (error) {
             res.status(500).json({
