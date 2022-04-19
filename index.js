@@ -7,6 +7,8 @@ Airtable.configure({
 });
 const base = Airtable.base('app4AttrWnY2xBs1I');
 
+const PORT = 3000;
+
 const app = express();
 app.use(bodyParser.json());
 app.use((req, res, next) => {
