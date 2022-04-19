@@ -29,6 +29,34 @@ app.get('/api/v1/blog', (req, res) => {
   });
 });
 
+// Get all posts
+app.get('/api/v1/blog/posts', async (req, res) => {
+    const posts = await Post.find({});
+    res.status(200).json({
+        message: 'Good job, you have found all posts!',
+        data: posts,
+        counter: posts.length
+    });
+});
+
+// Get one post
+app.get('/api/v1/blog/posts/:id', (req, res) => {
+    const postId = req.params.id;
+    if(postId) {
+        const post = Post.find({
+            _id: postId
+        })
+        res.status(200).json({
+            message: 'Good job, you have found one post!',
+            data: post
+        });
+    } else {
+        res.status(404).json({
+            message: 'Post not found!'
+        });
+    }
+});
+
 // Create new post
 app.post('/api/v1/blog/posts', async (req, res) => {
     const data = await req.body;
@@ -59,34 +87,6 @@ app.post('/api/v1/blog/posts', async (req, res) => {
                 error
             });
         }
-    }
-});
-
-// Get all posts
-app.get('/api/v1/blog/posts', async (req, res) => {
-    const posts = await Post.find({});
-    res.status(200).json({
-        message: 'Good job, you have found all posts!',
-        data: posts,
-        counter: posts.length
-    });
-});
-
-// Get one post
-app.get('/api/v1/blog/posts/:id', (req, res) => {
-    const postId = req.params.id;
-    if(postId) {
-        const post = Post.find({
-            _id: postId
-        })
-        res.status(200).json({
-            message: 'Good job, you have found one post!',
-            data: post
-        });
-    } else {
-        res.status(404).json({
-            message: 'Post not found!'
-        });
     }
 });
 
