@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const Post = require('./schemas/Post');
 const bodyParser = require('body-parser');
 
-const PORT = 5000;
+const PORT = 3000;
 
 const dbUrl = 'mongodb+srv://dbUser:OoNSMgEwyrzj7aSw@cluster0.r3lus.mongodb.net/blog?retryWrites=true&w=majority';
 mongoose.connect(dbUrl, {
