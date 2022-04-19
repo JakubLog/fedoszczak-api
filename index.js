@@ -50,10 +50,11 @@ app.get('/api/v1/blog/posts/:id', (req, res) => {
     const postId = req.params.id;
     if(postId) {
         const post = Post.find({
-            _id: postId
+            friendly: postId
         })
         res.status(200).json({
             message: 'Good job, you have found one post!',
+            searched_by: postId,
             data: post
         });
     } else {
