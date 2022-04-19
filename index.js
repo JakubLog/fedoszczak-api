@@ -26,7 +26,7 @@ app.use((req, res, next) => {
 
 // Easter egg
 app.get('/fedex', (req, res) => {
-  res.status(200).json({message: 'Good job, you have found easter eeg! ~FedEx'});
+  res.status(200).json({message: 'Good job, you have found easter eeg! ~JakubLog'});
 });
 
 // --- API for my BLOG ---
@@ -70,20 +70,21 @@ app.get('/api/v1/blog/posts/:id', async (req, res) => {
 // Create new post
 app.post('/api/v1/blog/posts', async (req, res) => {
     const data = await req.body;
-    if(!data.title || !data.description || !data.category || !data.friendly) {
+    if(!data.title || !data.description || !data.category || !data.friendly || !data.content) {
         res.status(400).json({
             message: 'Please provide all required fields',
-            required: ['title', 'description', 'category', 'friendly'],
+            required: ['title', 'description', 'category', 'friendly', 'content'],
             optional: ['date']
         });
     } else {
-        const { title, description, category, date, friendly } = data;
+        const { title, description, category, date, friendly, content } = data;
         const post = new Post({
             title,
             description,
             category,
             date,
-            friendly
+            friendly,
+            content
         });
         try {
             const createdPost = await post.save();

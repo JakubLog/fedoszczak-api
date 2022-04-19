@@ -20,6 +20,10 @@ const PostSchema = new Schema(
             type: Date,
             default: Date.now
         },
+        content: {
+            type: String,
+            required: true
+        },
         friendly: {
             type: String,
             required: true
