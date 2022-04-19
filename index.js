@@ -3,13 +3,16 @@ const mongoose = require('mongoose');
 const Post = require('./schemas/Post');
 const bodyParser = require('body-parser');
 
-const PORT = 3000;
+const PORT = 5000;
 
 const dbUrl = 'mongodb+srv://dbUser:OoNSMgEwyrzj7aSw@cluster0.r3lus.mongodb.net/blog?retryWrites=true&w=majority';
 mongoose.connect(dbUrl, {
     useNewUrlParser: true
-}, () => {
-    console.log('Connected to database');
+}, (error) => {
+    if(!error)
+        console.log('Connected to database');
+    else
+        console.error('Error connecting to database: ', error);
 });
 
 const app = express();
@@ -46,10 +49,10 @@ app.get('/api/v1/blog/posts', async (req, res) => {
 });
 
 // Get one post
-app.get('/api/v1/blog/posts/:id', (req, res) => {
+app.get('/api/v1/blog/posts/:id', async (req, res) => {
     const postId = req.params.id;
     if(postId) {
-        const post = Post.find({
+        const post = await Post.find({
             friendly: postId
         })
         res.status(200).json({
