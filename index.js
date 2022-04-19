@@ -7,8 +7,6 @@ Airtable.configure({
 });
 const base = Airtable.base('app4AttrWnY2xBs1I');
 
-const PORT = 3000;
-
 const app = express();
 app.use(bodyParser.json());
 app.use((req, res, next) => {
@@ -42,7 +40,8 @@ app.get('/api/v1/blog/posts', async (req, res) => {
                 message: 'Something went wrong'
             });
         }
-        const posts = records.map((record) => record.fields);
+        const posts = records.map((record) => Object.fromEntries(Object.entries(record.fields).map(([key, value]) => [key.toLowerCase(), value])));
+        console.log(posts);
         res.status(200).json({
             message: 'Good job, you have found all posts!',
             data: posts,
