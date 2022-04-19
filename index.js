@@ -3,6 +3,15 @@ const mongoose = require('mongoose');
 const Post = require('./schemas/Post');
 const bodyParser = require('body-parser');
 
+const PORT = 3000;
+
+const dbUrl = 'mongodb+srv://dbUser:OoNSMgEwyrzj7aSw@cluster0.r3lus.mongodb.net/blog?retryWrites=true&w=majority';
+mongoose.connect(dbUrl, {
+    useNewUrlParser: true
+}, () => {
+    console.log('Connected to database');
+});
+
 const app = express();
 app.use(bodyParser.json());
 app.use((req, res, next) => {
@@ -11,9 +20,6 @@ app.use((req, res, next) => {
     res.append('Access-Control-Allow-Headers', 'Content-Type');
     next();
 });
-
-const PORT = 3000;
-mongoose.connect('mongodb+srv://dbUser:OoNSMgEwyrzj7aSw@cluster0.r3lus.mongodb.net/blog?retryWrites=true&w=majority');
 
 // Easter egg
 app.get('/fedex', (req, res) => {
