@@ -43,7 +43,6 @@ app.get('/api/v1/blog/posts', async (req, res) => {
             });
         }
         const posts = records.map((record) => Object.fromEntries(Object.entries(record.fields).map(([key, value]) => [key.toLowerCase(), value])));
-        console.log(posts);
         res.status(200).json({
             message: 'Good job, you have found all posts!',
             data: posts,
@@ -53,8 +52,8 @@ app.get('/api/v1/blog/posts', async (req, res) => {
 });
 
 // Get one post
-app.get('/api/v1/blog/posts/:id', async (req, res) => {
-    const postId = req.params.id;
+app.get('/api/v1/blog/posts/:friendly', async (req, res) => {
+    const postId = req.params.friendly;
     if(postId) {
         await base('Table 1').select({
             view: 'Grid view',
@@ -83,7 +82,7 @@ app.get('/api/v1/blog/posts/:id', async (req, res) => {
 // Create new post
 app.post('/api/v1/blog/posts', async (req, res) => {
     const data = await req.body;
-    if(!data.title || !data.description || !data.category || !data.friendly || !data.content) {
+    if(!data.title || !data.description || !data.category || !data.content) {
         res.status(400).json({
             message: 'Please provide all required fields',
             required: ['title', 'description', 'category', 'friendly', 'content'],
@@ -99,11 +98,15 @@ app.post('/api/v1/blog/posts', async (req, res) => {
             return;
         }
         try {
+            const cleanTitle = title.trim().replaceAll('!', '').replaceAll('?', '');
+            const generatedUrl = cleanTitle.replace(/\s/g, '-').toLowerCase();
+            const chosenFriendlyURL = friendly || generatedUrl;
+
             await base('Table 1').create(
                 {
                         "Title": title,
                         "Category": category,
-                        "Friendly-url": friendly,
+                        "Friendly-url": chosenFriendlyURL,
                         "Description": description,
                         "Content": content
                 }
@@ -113,7 +116,14 @@ app.post('/api/v1/blog/posts', async (req, res) => {
                     }
                 });
             res.status(201).json({
-                message: 'Post created successfully'
+                message: 'Post created successfully',
+                data: {
+                    title,
+                    description,
+                    category,
+                    friendly: chosenFriendlyURL,
+                    content
+                }
             });
         } catch (error) {
             res.status(500).json({
@@ -121,6 +131,27 @@ app.post('/api/v1/blog/posts', async (req, res) => {
                 error
             });
         }
+    }
+});
+
+app.delete('/api/v1/blog/posts/:id', async (req, res) => {
+    const postId = req.params.id;
+    if(postId) {
+        await base('Table 1').destroy(postId, (err) => {
+            if (err) {
+                res.status(500).json({
+                    message: 'Something went wrong'
+                });
+                return;
+            }
+            res.status(200).json({
+                message: 'Post deleted successfully'
+            });
+        });
+    } else {
+        res.status(404).json({
+            message: 'Post not found!'
+        });
     }
 });
 
