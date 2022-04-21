@@ -89,7 +89,7 @@ app.post('/api/v1/blog/posts', async (req, res) => {
             optional: ['date']
         });
     } else {
-        const { title, description, category, friendly, content } = data;
+        const { title, description, category, friendly, content, isPlanned } = data;
         if(!["Programowanie", "Rozwojowe", "Bezpieczeństwo w sieci"].includes(category)) {
             res.status(400).json({
                 message: 'There\'s no such category!',
@@ -104,11 +104,12 @@ app.post('/api/v1/blog/posts', async (req, res) => {
 
             await base('Table 1').create(
                 {
-                        "Title": title,
-                        "Category": category,
-                        "Friendly-url": chosenFriendlyURL,
-                        "Description": description,
-                        "Content": content
+                    "Title": title,
+                    "Category": category,
+                    "Friendly-url": chosenFriendlyURL,
+                    "Description": description,
+                    "Content": content,
+                    "IsPlanned": isPlanned
                 }
                 , (err) => {
                     if (err) {
@@ -117,6 +118,7 @@ app.post('/api/v1/blog/posts', async (req, res) => {
                 });
             res.status(201).json({
                 message: 'Post created successfully',
+                isPlanned,
                 data: {
                     title,
                     description,
