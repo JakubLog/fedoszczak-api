@@ -34,6 +34,25 @@ app.get('/api/v1/blog', (req, res) => {
   });
 });
 
+// Get categories
+app.get("/api/v1/blog/categories", (req, res) => {
+    base(baseCategories).select({
+        view: 'Grid view'
+    }).firstPage(async (err, records) => {
+        if (err) {
+            res.status(500).json({
+                message: 'Something went wrong'
+            });
+            return;
+        }
+        const categories = records.map((record) => record.fields.Name);
+        res.status(200).json({
+            message: "Categories successfully fetched!",
+            data: categories
+        });
+    });
+});
+
 // Get all posts
 app.get('/api/v1/blog/posts', async (req, res) => {
     const shouldIGetPlanned = req.query.planned;
@@ -68,6 +87,7 @@ app.get('/api/v1/blog/posts/:friendly', async (req, res) => {
                 res.status(500).json({
                     message: 'Something went wrong'
                 });
+                return;
             }
             const posts = records.map((record) => record.fields);
             const post = Object.fromEntries(Object.entries(posts[0]).map(([key, value]) => [`${key[0].toLowerCase()}${key.slice(1)}`, value]));
