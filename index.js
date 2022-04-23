@@ -6,14 +6,16 @@ Airtable.configure({
     apiKey: 'key7pJTgcAbXkgfht'
 });
 const base = Airtable.base('app4AttrWnY2xBs1I');
+const baseArticles = 'articles';
+const baseCategories = 'categories';
 
-const PORT = 3000;
+const PORT = 5000;
 
 const app = express();
 app.use(bodyParser.json());
 app.use((req, res, next) => {
     res.append('Access-Control-Allow-Origin', '*');
-    res.append('Access-Control-Allow-Methods', 'GET,POST');
+    res.append('Access-Control-Allow-Methods', 'GET,POST,DELETE');
     res.append('Access-Control-Allow-Headers', 'Content-Type');
     next();
 });
@@ -34,15 +36,17 @@ app.get('/api/v1/blog', (req, res) => {
 
 // Get all posts
 app.get('/api/v1/blog/posts', async (req, res) => {
-    base('Table 1').select({
-        view: 'Grid view'
+    const shouldIGetPlanned = req.query.planned;
+    base(baseArticles).select({
+        view: 'Grid view',
+        filterByFormula: `{IsPlanned} = '${shouldIGetPlanned ? 'true' : 'false'}'`
     }).firstPage((err, records) => {
         if (err) {
             res.status(500).json({
                 message: 'Something went wrong'
             });
         }
-        const posts = records.map((record) => Object.fromEntries(Object.entries(record.fields).map(([key, value]) => [key.toLowerCase(), value])));
+        const posts = records.map((record) => Object.fromEntries(Object.entries(record.fields).map(([key, value]) => [`${key[0].toLowerCase()}${key.slice(1)}`, value])));
         res.status(200).json({
             message: 'Good job, you have found all posts!',
             data: posts,
@@ -55,9 +59,9 @@ app.get('/api/v1/blog/posts', async (req, res) => {
 app.get('/api/v1/blog/posts/:friendly', async (req, res) => {
     const postId = req.params.friendly;
     if(postId) {
-        await base('Table 1').select({
+        await base(baseArticles).select({
             view: 'Grid view',
-            filterByFormula: `{Friendly-url} = '${postId}'`
+            filterByFormula: `{Friendly-url} = '${postId}', {IsPlanned} = 'false'`
         }).firstPage((err, records) => {
             if (err) {
                 res.status(500).json({
@@ -65,7 +69,7 @@ app.get('/api/v1/blog/posts/:friendly', async (req, res) => {
                 });
             }
             const posts = records.map((record) => record.fields);
-            const post = Object.fromEntries(Object.entries(posts[0]).map(([key, value]) => [key.toLowerCase(), value]));
+            const post = Object.fromEntries(Object.entries(posts[0]).map(([key, value]) => [`${key[0].toLowerCase()}${key.slice(1)}`, value]));
             res.status(200).json({
                 message: 'Good job, you have found one post!',
                 searched_by: postId,
@@ -90,56 +94,66 @@ app.post('/api/v1/blog/posts', async (req, res) => {
         });
     } else {
         const { title, description, category, friendly, content, isPlanned } = data;
-        if(!["Programowanie", "Rozwojowe", "Bezpieczeństwo w sieci"].includes(category)) {
-            res.status(400).json({
-                message: 'There\'s no such category!',
-                available: ["Programowanie", "Rozwojowe", "Bezpieczeństwo w sieci"]
-            });
-            return;
-        }
-        try {
-            const cleanTitle = title.trim().replaceAll('!', '').replaceAll('?', '');
-            const generatedUrl = cleanTitle.replace(/\s/g, '-').toLowerCase();
-            const chosenFriendlyURL = friendly || generatedUrl;
+        await base(baseCategories).select({
+            view: 'Grid view'
+        }).firstPage(async (err, records) => {
+            if (err) {
+                res.status(500).json({
+                    message: 'Something went wrong'
+                });
+            }
+            const categories = records.map((record) => record.fields.Name);
+            if(!categories.includes(category)) {
+                res.status(400).json({
+                    message: 'There\'s no such category!',
+                    available: categories
+                });
+                return;
+            }
+            try {
+                const cleanTitle = title.trim().replaceAll('!', '').replaceAll('?', '');
+                const generatedUrl = cleanTitle.replace(/\s/g, '-').toLowerCase();
+                const chosenFriendlyURL = friendly || generatedUrl;
 
-            await base('Table 1').create(
-                {
-                    "Title": title,
-                    "Category": category,
-                    "Friendly-url": chosenFriendlyURL,
-                    "Description": description,
-                    "Content": content,
-                    "IsPlanned": isPlanned
-                }
-                , (err) => {
-                    if (err) {
-                        console.error(err);
+                await base(baseArticles).create(
+                    {
+                        "Title": title,
+                        "Category": category,
+                        "Friendly-url": chosenFriendlyURL,
+                        "Description": description,
+                        "Content": content,
+                        "IsPlanned": isPlanned ? "true" : 'false'
+                    }
+                    , (err) => {
+                        if (err) {
+                            console.error(err);
+                        }
+                    });
+                res.status(201).json({
+                    message: 'Post created successfully',
+                    isPlanned: !!isPlanned,
+                    data: {
+                        title,
+                        description,
+                        category,
+                        friendly: chosenFriendlyURL,
+                        content
                     }
                 });
-            res.status(201).json({
-                message: 'Post created successfully',
-                isPlanned,
-                data: {
-                    title,
-                    description,
-                    category,
-                    friendly: chosenFriendlyURL,
-                    content
-                }
-            });
-        } catch (error) {
-            res.status(500).json({
-                message: 'Post not created',
-                error
-            });
-        }
+            } catch (error) {
+                res.status(500).json({
+                    message: 'Post not created',
+                    error
+                });
+            }
+        });
     }
 });
 
 app.delete('/api/v1/blog/posts/:id', async (req, res) => {
     const postId = req.params.id;
     if(postId) {
-        await base('Table 1').destroy(postId, (err) => {
+        await base(baseArticles).destroy(postId, (err) => {
             if (err) {
                 res.status(500).json({
                     message: 'Something went wrong'
