@@ -43,8 +43,7 @@ app.get('/api/v1/blog/posts', async (req, res) => {
     }).firstPage((err, records) => {
         if (err) {
             res.status(500).json({
-                message: 'Something went wrong',
-                error: err,
+                message: 'Something went wrong'
             });
             return;
         }
