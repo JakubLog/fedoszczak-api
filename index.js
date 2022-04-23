@@ -43,8 +43,10 @@ app.get('/api/v1/blog/posts', async (req, res) => {
     }).firstPage((err, records) => {
         if (err) {
             res.status(500).json({
-                message: 'Something went wrong'
+                message: 'Something went wrong',
+                error: err,
             });
+            return;
         }
         const posts = records.map((record) => Object.fromEntries(Object.entries(record.fields).map(([key, value]) => [`${key[0].toLowerCase()}${key.slice(1)}`, value])));
         res.status(200).json({
