@@ -9,7 +9,7 @@ const base = Airtable.base('app4AttrWnY2xBs1I');
 const baseArticles = 'articles';
 const baseCategories = 'categories';
 
-const PORT = 5000;
+const PORT = 3000;
 
 const app = express();
 app.use(bodyParser.json());
